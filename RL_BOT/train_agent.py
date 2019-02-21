@@ -64,12 +64,12 @@ def train_agent(data,window_size,episode_count, batch_size):
             # sit
             next_state = getState(data, t + 1, window_size + 1)
             reward = 0
-            qty = max((agent.buy_perc*agent.cash)//formatPrice(data[t])[1],0)
+            qty = max((agent.buy_perc*agent.cash)//data[t],0)
             if (qty == 0 and action ==1) or action == 0:
                 action = 0
                 print("Hold")
             elif action == 1: # buy
-                qty = max((agent.buy_perc*agent.cash)//formatPrice(data[t])[1],0)
+                qty = max((agent.buy_perc*agent.cash)//data[t],0)
                 agent.inventory_value.append(data[t])
                 agent.inventory_qty.append(qty)
                 agent.cash -= qty*data[t]*(1+agent.trans_cost)
@@ -100,6 +100,9 @@ def train_agent(data,window_size,episode_count, batch_size):
                 agent.cash += bought_qty*data[t]*(1-agent.trans_cost)
                 total_profit += (data[t] - bought_price)*bought_qty*(1-agent.trans_cost)
                 print("Sell all units at : " + formatPrice(data[t])[0] + " | Profit: " + formatPrice((data[t] - bought_price)*bought_qty)[0] + " | Total Profit: " + formatPrice(total_profit)[0])
+            else:
+                action = 0
+                print("Hold")
             agent.unr_profit = np.dot(agent.inventory_value,agent.inventory_qty) - (sum(agent.inventory_qty)*data[t])
             done = True if t == l - 1 else False
             agent.memory.append((state, action, reward, next_state, done))
