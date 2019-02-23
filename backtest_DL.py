@@ -39,36 +39,36 @@ def backtest(dataset,weights):
     while period < max_days_to_test:
         if period < 10:   #start at period 10 (row start from 0) to use previous 10 values
             pact = 0
-    else:
-        if env.price_diff_perc <= -0.3 or env.price_diff_perc > 0.3:
-            pact = 2
-
         else:
-            x = np.expand_dims(env.data.iloc[period-INPUT_HEIGHT:period,:].values,0)
-            past_10_mean = np.mean(env.data.iloc[period-INPUT_HEIGHT:period,0])
-            past_10_std = np.std(env.data.iloc[period-INPUT_HEIGHT:period,0])
-            pred = model.predict(x)[0][0]
-            
-            #DL Method
-            if ((pred - env.data.iloc[period,0])/env.data.iloc[period,0]) >= 0.025:
-                pact = 11
+            if env.price_diff_perc <= -0.3 or env.price_diff_perc > 0.3:
+                pact = 2
 
-            elif ((pred - env.data.iloc[period,0])/env.data.iloc[period,0]) <= -0.04:
-                if len(env.positions) == 0:
-                    pact = 0
-                else:
-                    pact = 2
-
-            #SD Method
-            else:  
-                if env.data.iloc[period,0] < (past_10_mean - 1.1*past_10_std) and len(env.positions)==0:
-                    pact = 1
-                elif env.data.iloc[period,0] < (past_10_mean - 2*past_10_std) and len(env.positions)==0:
+            else:
+                x = np.expand_dims(env.data.iloc[period-INPUT_HEIGHT:period,:].values,0)
+                past_10_mean = np.mean(env.data.iloc[period-INPUT_HEIGHT:period,0])
+                past_10_std = np.std(env.data.iloc[period-INPUT_HEIGHT:period,0])
+                pred = model.predict(x)[0][0]
+                
+                #DL Method
+                if ((pred - env.data.iloc[period,0])/env.data.iloc[period,0]) >= 0.025:
                     pact = 11
-                elif env.data.iloc[period,0] < (past_10_mean - 2.5*past_10_std) and len(env.positions)==0:
-                    pact = 111
-                else:
-                    pact = 0
+
+                elif ((pred - env.data.iloc[period,0])/env.data.iloc[period,0]) <= -0.04:
+                    if len(env.positions) == 0:
+                        pact = 0
+                    else:
+                        pact = 2
+
+                #SD Method
+                else:  
+                    if env.data.iloc[period,0] < (past_10_mean - 1.1*past_10_std) and len(env.positions)==0:
+                        pact = 1
+                    elif env.data.iloc[period,0] < (past_10_mean - 2*past_10_std) and len(env.positions)==0:
+                        pact = 11
+                    elif env.data.iloc[period,0] < (past_10_mean - 2.5*past_10_std) and len(env.positions)==0:
+                        pact = 111
+                    else:
+                        pact = 0
                         
         obs,reward,profit = env.step(pact)
         total_profit += profit

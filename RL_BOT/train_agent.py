@@ -57,69 +57,96 @@ def train_agent(data,window_size,episode_count, batch_size):
         state = getState(data, 0, window_size + 1)
         agent.reset()
         total_profit = 0
-
+        idle = 0
         for t in range(l):
             action = agent.act(state)
-
-            # sit
             next_state = getState(data, t + 1, window_size + 1)
-            reward = 0
             qty = max((agent.buy_perc*agent.cash)//data[t],0)
-            if (qty == 0 and action ==1) or action == 0:
-                action = 0
-                print("Hold")
-            elif action == 1: # buy
-                qty = max((agent.buy_perc*agent.cash)//data[t],0)
-                agent.inventory_value.append(data[t])
-                agent.inventory_qty.append(qty)
-                agent.cash -= qty*data[t]*(1+agent.trans_cost)
-                reward = np.sign(agent.unr_profit//(sum(agent.inventory_qty)))
-                print("Buy " + str(qty) + 'units for ' + formatPrice(data[t])[0] + ' unit price, total cost: ' + str(qty*formatPrice(data[t])[1]))
-
-            elif action == 2 and len(agent.inventory_qty) > 0: # sell one (earliest first)
-                bought_price = agent.inventory_value.pop(0)
-                bought_qty = agent.inventory_qty.pop(0)
-                reward = np.sign(data[t] - bought_price)
-                agent.cash += bought_qty*data[t]*(1-agent.trans_cost)
-                total_profit += (data[t] - bought_price)*bought_qty
-                print("Sell " + str(bought_qty) + "units at : " + formatPrice(data[t])[0] + " | Profit: " + formatPrice((data[t] - bought_price)*bought_qty)[0] + " | Total Profit: " + formatPrice(total_profit)[0])
-            
-            elif action == 3 and len(agent.inventory_qty) > 0: # sell one (latest first)
-                bought_price = agent.inventory_value.pop(-1)
-                bought_qty = agent.inventory_qty.pop(-1)
-                reward = np.sign(data[t] - bought_price)
-                agent.cash += bought_qty*data[t]*(1-agent.trans_cost)
-                total_profit += (data[t] - bought_price)*bought_qty
-                print("Sell " + str(bought_qty) + "units at : " + formatPrice(data[t])[0] + " | Profit: " + formatPrice((data[t] - bought_price)*bought_qty)[0] + " | Total Profit: " + formatPrice(total_profit)[0])
-            
-            elif action == 4 and len(agent.inventory_qty) > 0: # sell all
-                bought_qty = sum(agent.inventory_qty)
-                agent.inventory_value = []
-                agent.inventory_qty = []
-                reward = np.sign(data[t] - bought_price)
-                agent.cash += bought_qty*data[t]*(1-agent.trans_cost)
-                total_profit += (data[t] - bought_price)*bought_qty*(1-agent.trans_cost)
-                print("Sell all units at : " + formatPrice(data[t])[0] + " | Profit: " + formatPrice((data[t] - bought_price)*bought_qty)[0] + " | Total Profit: " + formatPrice(total_profit)[0])
+            if qty == 0 and action == 1:
+                if not agent.is_eval and random.random() <= agent.epsilon:
+                    action =  random.choice([0,2,3,4])
+                else:
+                    options = agent.model.predict(state)[0]
+                    action = np.argmax(options[:1]+options[2:])
+                    if action >0:
+                        action = action + 1 
+                    else:
+                        action = 0                    
+            if len(agent.inventory_qty) > 0:
+                if action == 0:
+                    reward = 0
+                    #print('Hold')
+                elif action == 1: # buy
+                    agent.inventory_value.append(data[t])
+                    agent.inventory_qty.append(qty)
+                    agent.cash -= qty*data[t]*(1+agent.trans_cost)
+                    reward = 0
+                    #print("Buy " + str(qty) + 'units for ' + formatPrice(data[t])[0] + ' unit price, total cost: ' + str(qty*formatPrice(data[t])[1]*(1+agent.trans_cost)))
+                elif action == 2: # sell one (earliest first)
+                    bought_price = agent.inventory_value.pop(0)
+                    bought_qty = agent.inventory_qty.pop(0)
+                    reward = np.sign(data[t] - bought_price)
+                    agent.cash += bought_qty*data[t]*(1-agent.trans_cost)
+                    total_profit += (data[t] - bought_price)*bought_qty
+                    #print("Sell " + str(bought_qty) + "units at : " + formatPrice(data[t])[0] + " | Profit: " + formatPrice((data[t] - bought_price)*bought_qty*(1-agent.trans_cost))[0] + " | Total Profit: " + formatPrice(total_profit)[0])
+                            
+                elif action == 3: # sell one (latest first)
+                    bought_price = agent.inventory_value.pop(-1)
+                    bought_qty = agent.inventory_qty.pop(-1)
+                    reward = np.sign(data[t] - bought_price)
+                    agent.cash += bought_qty*data[t]*(1-agent.trans_cost)
+                    total_profit += (data[t] - bought_price)*bought_qty
+                    #print("Sell " + str(bought_qty) + "units at : " + formatPrice(data[t])[0] + " | Profit: " + formatPrice((data[t] - bought_price)*bought_qty*(1-agent.trans_cost))[0] + " | Total Profit: " + formatPrice(total_profit)[0])
+                            
+                elif action == 4: # sell all
+                    bought_qty = sum(agent.inventory_qty)
+                    agent.cash += bought_qty*data[t]*(1-agent.trans_cost)
+                    total_profit += ((bought_qty*data[t]) - 
+                                    (np.dot(agent.inventory_value,agent.inventory_qty)))*(1-agent.trans_cost)
+                    reward = np.sign(((bought_qty*data[t]) - 
+                                    (np.dot(agent.inventory_value,agent.inventory_qty)))*(1-agent.trans_cost))
+                    agent.inventory_value = []
+                    agent.inventory_qty = []
+                    #print("Sell all units at : " + formatPrice(data[t])[0] + " | Profit: " + formatPrice(((bought_qty*data[t]) - 
+                                    #(np.dot(agent.inventory_value,agent.inventory_qty)))*(1-agent.trans_cost))[0] + " | Total Profit: " + formatPrice(total_profit)[0])
+            elif len(agent.inventory_qty) == 0:
+                if not agent.is_eval and random.random() <= agent.epsilon:
+                    action =  random.randrange(2)
+                else:
+                    options = agent.model.predict(state)
+                    action = np.argmax(options[0][:2])
+                if qty == 0 or action==0:
+                    action = 0
+                    reward = 0
+                    #print("Hold")
+                elif action == 1: # buy
+                    agent.inventory_value.append(data[t])
+                    agent.inventory_qty.append(qty)
+                    agent.cash -= qty*data[t]*(1+agent.trans_cost)
+                    reward = 0
+                    #print("Buy " + str(qty) + 'units for ' + formatPrice(data[t])[0] + ' unit price, total cost: ' + str(qty*formatPrice(data[t])[1]*(1+agent.trans_cost)))
+            if action == 0:
+                idle += 1
             else:
-                action = 0
-                print("Hold")
+                idle = 0
+            if idle > 30:
+                reward = -1
+            
             agent.unr_profit = np.dot(agent.inventory_value,agent.inventory_qty) - (sum(agent.inventory_qty)*data[t])
             done = True if t == l - 1 else False
             agent.memory.append((state, action, reward, next_state, done))
             state = next_state
-
             if done:
                 print("--------------------------------")
                 print("Total Profit for episode: " + formatPrice(total_profit + agent.unr_profit)[0])
                 print("--------------------------------")
+                        
                 
-        
             if len(agent.memory) > batch_size:
                 agent.expReplay(batch_size)
 
         if e % 3 == 0:
-            agent.model.save(ROOT_DIR + "RL_Model_ep" + str(e))
-
+            agent.model.save(BASE_DIR + "RL_Model_ep" + str(e))
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser()

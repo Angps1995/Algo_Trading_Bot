@@ -23,6 +23,7 @@ class Trading_Environment:
 		self.positions = np.array([])
 		self.position_value = 0
 		self.cash = 10000000
+		self.stock_qty = 0
 		self.history = np.zeros(self.history_len)
 		return np.concatenate(([self.position_value],self.history))
 	
@@ -33,7 +34,9 @@ class Trading_Environment:
 		# 2 : sell
 		reward = 0
 		profits = 0
+		buy_cap = (self.buying_perc-0.2)*self.cash
 		stock_price = self.data.iloc[self.t,0]
+		stock_qty = buy_cap//stock_price
 		#if buy, hold stock at price
 		if act==1:
 			if len(self.positions) != 0:
