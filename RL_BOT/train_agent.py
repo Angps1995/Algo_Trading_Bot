@@ -150,7 +150,7 @@ def train_agent(data,window_size,episode_count, batch_size):
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dataset', default='Cleaned_Data/cleaned_4hr.csv', help='Full Dataset to Train on')
+    parser.add_argument('--dataset', default='Cleaned_Data/cleaned_daily.csv', help='Full Dataset to Train on')
     parser.add_argument('--split', default=4096, help='Row number to split Trg/Test')
     parser.add_argument('--w', default=10, help='Past periods to take into account for state')
     parser.add_argument('--ep', default=320, help='Number of episodes to train the agent')
