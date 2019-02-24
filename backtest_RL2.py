@@ -44,14 +44,14 @@ def getState(data, t, n):
 	return np.array([res])
 
 window_size = 10
-model_name = '/RL_BOTRL_Model_ep36'
+model_name = '/RL_BOTRL_Model_v2_ep15'
 agent = Agent(state_size=window_size, is_eval=True, model_name=model_name)
 steps = []
 acts = []
 price = []
 units = []
 curr_cash = []
-data = pd.read_csv(os.path.join(BASE_DIR,'Cleaned_Data/cleaned_daily.csv'))
+data = pd.read_csv(os.path.join(BASE_DIR,'Cleaned_Data/SPY-RL.csv'))
 data = getStockDataVec(data)
 l = len(data) 
 state = getState(data, 0, window_size + 1)
@@ -167,5 +167,5 @@ dic["Units"] = units
 
 RL_DF = pd.DataFrame(dic)
 RL_DF=RL_DF[["time period","Actions","Prices","Units"]]
-#RL_DF.to_csv(BASE_DIR + '/RL_DF.csv')
+#   RL_DF.to_csv(BASE_DIR + '/RL_DF_v2.csv')
 print(RL_DF["Actions"].value_counts())

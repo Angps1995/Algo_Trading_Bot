@@ -138,26 +138,25 @@ def train_agent(data,window_size,episode_count, batch_size):
             state = next_state
             if done:
                 print("--------------------------------")
-                print("Total Profit for episode: " + formatPrice(total_profit + agent.unr_profit)[0])
+                print("Total Profit for episode: " + formatPrice(agent.cash - 10000000)[0])
                 print("--------------------------------")
                         
                 
             if len(agent.memory) > batch_size:
                 agent.expReplay(batch_size)
 
-        if e % 3 == 0:
-            agent.model.save(BASE_DIR + "RL_Model_ep" + str(e))
+        agent.model.save(BASE_DIR + "RL_Model_v2_ep" + str(e))
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dataset', default='Cleaned_Data/cleaned_daily.csv', help='Full Dataset to Train on')
-    parser.add_argument('--split', default=4096, help='Row number to split Trg/Test')
+    parser.add_argument('--dataset', default='Cleaned_Data/SPY-RL.csv', help='Full Dataset to Train on')
+    parser.add_argument('--split', default=4800, help='Row number to split Trg/Test')
     parser.add_argument('--w', default=10, help='Past periods to take into account for state')
     parser.add_argument('--ep', default=320, help='Number of episodes to train the agent')
     parser.add_argument('--b', default=32, help='Number of batches')
     args = parser.parse_args()
     df = pd.read_csv(os.path.join(ROOT_DIR,args.dataset))
-    train = df[:args.split]
+    train = df[500:500+args.split]
     data, window_size, episode_count, batch = train, args.w, args.ep, args.b
 
     train_agent(data,window_size,episode_count, batch)
