@@ -13,7 +13,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.abspath(os.path.join(BASE_DIR, os.pardir))
 sys.path.append(BASE_DIR)
 class Agent:
-    def __init__(self, state_size, cash = 10000000, buy_perc = 0.8, trans_cost = 0.0002, is_eval=False, model_name=""):
+    def __init__(self, state_size, cash = 10000000, buy_perc = 0.99, trans_cost = 0.0002, is_eval=False, model_name=""):
         self.state_size = state_size # normalized previous days
         self.action_size = 5 # sit, buy, sell one from first, sell one from latest,sell all
         self.memory = deque(maxlen=1000)
